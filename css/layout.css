@@ -35,14 +35,7 @@ li {
   padding-left: 10px;
   padding-top: 10px;
 }
-#titleTextArea {
-  min-height: 38px;
-  height: 40px;
-  width: 500px;
-}
 #textInput {
-  min-height: 500px;
-  /*width:805px;*/
   padding-left: 30px;
 }
 #contentTextArea {
