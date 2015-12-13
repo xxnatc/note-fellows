@@ -1,6 +1,7 @@
 var noteTracker = {};
 noteTracker.currUser = localStorage.getItem('user');
 
+// loads data from JSON only if the noteCache doesn't exist in local storage
 noteTracker.init = function() {
   webDB.init();
   if (!localStorage.getItem('noteCache')) {
@@ -11,6 +12,7 @@ noteTracker.init = function() {
   }
 };
 
+// import data from JSON
 noteTracker.loadData = function() {
   webDB.execute('DELETE FROM notes;');
   $.getJSON('data/notes.json', function(data) {
@@ -22,6 +24,7 @@ noteTracker.loadData = function() {
   });
 };
 
+// save to SQL database one note at a time
 noteTracker.writeToDB = function(note) {
   webDB.execute(
     [{
@@ -31,6 +34,7 @@ noteTracker.writeToDB = function(note) {
   );
 };
 
+// update and list all notes in preview
 noteTracker.showPreviewAll = function(callback) {
   callback = callback || function() {};
   $('#noteList').empty();
@@ -42,6 +46,19 @@ noteTracker.showPreviewAll = function(callback) {
     function(data) {
       data.forEach(noteTracker.appendPreview);
       callback();
+    }
+  );
+};
+
+noteTracker.showPreviewFiltered = function(selectedTag) {
+  $('#noteList').empty();
+  webDB.execute(
+    [{
+      'sql': 'SELECT * FROM notes WHERE user = ? AND tags = ?',
+      'data': [noteTracker.currUser, selectedTag]
+    }],
+    function(data) {
+      data.forEach(noteTracker.appendPreview);
     }
   );
 };
@@ -62,6 +79,7 @@ noteTracker.handlePreview = function() {
   });
 };
 
+// display a note with specified id
 noteTracker.displayNote = function(noteId) {
   webDB.execute(
     [{
@@ -75,6 +93,7 @@ noteTracker.displayNote = function(noteId) {
   );
 };
 
+// event handlers for the buttons in note display mode
 noteTracker.handleDisplayOptions = function(noteId, noteData) {
   $('#note-edit-button').on('click', function(event) {
     event.preventDefault();
@@ -90,6 +109,7 @@ noteTracker.handleDisplayOptions = function(noteId, noteData) {
   });
 };
 
+// fill form with saved content from database
 noteTracker.editNote = function(noteId, noteData) {
   noteData.formLegend = 'Edit Note';
   noteData.submitText = 'Update Note';
@@ -100,11 +120,11 @@ noteTracker.editNote = function(noteId, noteData) {
   });
 };
 
+// rewrite the existing note in database
 noteTracker.saveEditNote = function(noteId, $btn) {
   var title = $btn.siblings('[name=noteTitle]').val();
   var tags = $btn.siblings('[name=noteTag]').val();
   var content = $btn.siblings('[name=noteContent]').val();
-
   webDB.execute(
     [{
       'sql': 'UPDATE notes SET title = ?, tags = ?, content = ? WHERE id = ?;',
@@ -117,6 +137,7 @@ noteTracker.saveEditNote = function(noteId, $btn) {
   );
 };
 
+// remove note with specified id from database
 noteTracker.deleteNote = function(noteId) {
   webDB.execute(
     [{
@@ -130,6 +151,7 @@ noteTracker.deleteNote = function(noteId) {
   );
 };
 
+// empty form for creating new note
 noteTracker.newNote = function() {
   var formData = {};
   formData.formLegend = 'Create New Note';
@@ -141,11 +163,12 @@ noteTracker.newNote = function() {
   });
 };
 
+// save new note into database, also check for empty title or content
 noteTracker.saveNewNote = function($btn) {
   var title = $btn.siblings('[name=noteTitle]').val();
   var tags = $btn.siblings('[name=noteTag]').val();
   var content = $btn.siblings('[name=noteContent]').val();
-  if (title || content) {
+  if (title.length || content.length) {
     if (!title) {
       title = 'Untitled';
     }
@@ -178,9 +201,41 @@ noteTracker.getDisplayTemplate = function() {
     noteTracker.displayTemplate = Handlebars.compile(data);
   }).done(function() {
     noteTracker.newNote();
+    noteTracker.showTagFilter();
     noteTracker.handlePreview();
+    $('#noteList img').hide();
   });
 };
+
+noteTracker.showTagFilter = function() {
+  webDB.execute(
+    [{
+      'sql': 'SELECT DISTINCT tags FROM notes WHERE user = ?;',
+      'data': [noteTracker.currUser]
+    }],
+    function(data) {
+      data.forEach(noteTracker.populateTagFilter);
+      noteTracker.handleTagFilter();
+    }
+  );
+};
+
+noteTracker.populateTagFilter = function(el) {
+  var $opt = $('<option>').attr('name', el.tags).text(el.tags);
+  $('#tags-dropdown').append($opt);
+};
+
+noteTracker.handleTagFilter = function() {
+  $('#tags-dropdown').on('change', function(event) {
+    var selectedTag = $(this).find('option:selected').val();
+    if (selectedTag === 'all') {
+      noteTracker.showPreviewAll();
+    } else {
+      noteTracker.showPreviewFiltered(selectedTag);
+    }
+  });
+};
+
 
 noteTracker.init();
 noteTracker.getFormTemplate();

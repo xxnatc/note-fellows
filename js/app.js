@@ -1,3 +1,5 @@
+/* THIS ORIGINAL SCRIPT IS NO LONGER IN USED - KEPT AS A REFERENCE */
+
 var userLibrary = [];
 var tempNoteId;
 // this control flow allows us to avoid errors when switching between html pages
