@@ -109,6 +109,8 @@ login.checkReturnUserLogin = function($btn) {
           localStorage.setItem('userIndex', JSON.stringify(index));
           // ??? localStorage.setItem('userLibrary', JSON.stringify(userLibrary));
           util.redirectTo('/notes.html');
+        } else {
+          $('#msg').text('Incorrect password');
         }
       }
     };
@@ -116,8 +118,6 @@ login.checkReturnUserLogin = function($btn) {
 
     if (!userExists) {
       $('#msg').text('User does not exist');
-    } else {
-      $('#msg').text('Incorrect password');
     }
   }
 }

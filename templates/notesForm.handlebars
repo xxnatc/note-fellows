@@ -1,0 +1,12 @@
+<form id="textInput" class="borders">
+  <fieldset>
+    <legend>{{formLegend}}</legend>
+    <label for="noteTitle">Title</label>
+    <input id="titleTextArea" type="text" name="noteTitle" value="{{title}}" required></input>
+    <label for="noteTag">Add a Tag</label>
+    <input type="text" name="noteTag" value="{{tags}}"></input>
+    <label for="noteContent">Content</label>
+    <textarea id="contentTextArea" name="noteContent" cols="50" rows="8" required>{{content}}</textarea>
+    <button id="form-submit" class="button-primary" value="Create New Note">{{submitText}}</button>
+  </fieldset>
+</form>

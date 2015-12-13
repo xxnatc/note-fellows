@@ -1,50 +1,134 @@
 var tempNoteId;
 
-if (localStorage.userIndex) {
-  var userIndex = JSON.parse(localStorage.getItem('userIndex'));
-  userLibrary = JSON.parse(localStorage.getItem('userLibrary'));
-}
-
-$('#noteList').on('click', function(e) {
-  noteTracker.getNote(e);
-});
-
-/***************OBJECT CONSTRUCTORS***************/
-// the User constructors has been moved to in global.js
-
-function Note(noteTitle, noteContent) {
-  this.noteTitle = noteTitle;
-  this.noteContent = noteContent;
-  this.noteTags = [];
-  this.noteIndex = 0;
-}
-
 var noteTracker = {};
-noteTracker.currentIndex = userIndex;
 
-noteTracker.newNote = function(event) {
-  event.preventDefault();
-  var noteTitle = event.target.noteTitle.value;
-  var noteTag = event.target.noteTag.value;
-  var noteContent = event.target.noteContent.value;
+var currUser = {};
+currUser.index = JSON.parse(localStorage.getItem('userIndex'));
+noteTracker.userLib = JSON.parse(localStorage.getItem('userLibrary'));
+currUser.lib = noteTracker.userLib[currUser.index].library;
+currUser.tagLib = noteTracker.userLib[currUser.index].tagLibrary;
 
-  var temp = new Note(noteTitle, noteContent);
-  temp.noteIndex = userLibrary[userIndex].library.length;
+noteTracker.importData = function() {
+  $.getJSON('data/notesData.json', function(data) {
 
-  if (noteTag.length > 0) {
-    temp.noteTags.push(noteTag);
-    if (userLibrary[userIndex].tagLibrary.indexOf(noteTag) === -1) {
-      userLibrary[userIndex].tagLibrary.push(noteTag);
-    }
-  }
-  userLibrary[userIndex].library.push(temp);
-  localStorage.setItem('userLibrary', JSON.stringify(userLibrary));
-  this.sendToBrowser(temp);
+  });
 };
+
+noteTracker.getFormTemplate = function() {
+  $.get('templates/notesForm.handlebars', function(data) {
+    noteTracker.formTemplate = Handlebars.compile(data);
+  }).done();
+};
+
+noteTracker.getDisplayTemplate = function() {
+  $.get('templates/notesDisplay.handlebars', function(data) {
+    noteTracker.displayTemplate = Handlebars.compile(data);
+  }).done();
+};
+
+noteTracker.updateStorage = function() {
+  this.userLib[currentIndex].library = currUser.lib;
+  this.userLib[currentIndex].tagLibrary = currUser.tagLib;
+  localStorage.setItem('userLibrary', this.userLib);
+};
+
+
+noteTracker.handleNewEntry = function() {
+  $('#form-submit').on('click', function(event) {
+    event.preventDefault();
+    noteTracker.saveNote($(this), currUser.lib.length);
+  });
+};
+
+noteTracker.handleEditedEntry = function() {
+  $('#form-submit').on('click', function(event) {
+    event.preventDefault();
+    //////
+    noteTracker.saveNote($(this), tempNoteId);
+  });
+};
+
+noteTracker.showForm = function(note) {
+  console.log(this);
+  var compiledHTML = this.formTemplate(note);
+  $('#displayWindow').html(compiledHTML);
+
+  // $('#form-submit').on('click', function(event) {
+  //   event.preventDefault();
+  //   noteTracker.newNote($(this));
+  //   console.log($(this));
+  //   noteTracker.createForm();
+  // });
+};
+
+noteTracker.saveNote = function($btn, index) {
+  var noteTitle = $btn.siblings('[name=noteTitle]').val();
+  var noteTags = $btn.siblings('[name=noteTag]').val();
+  var noteContent = $btn.siblings('[name=noteContent]').val();
+
+  var tempNote = {
+    noteTitle: noteTitle,
+    noteContent: noteContent,
+    noteTag: noteTags.split(',').map(function(el) {
+      return el.trim();
+    }),
+    noteIndex: currUser.lib.length
+  };
+  currUser.lib[index] = tempNote;
+
+  temp.noteTag.forEach(this.updateTags);
+  this.updateStorage();
+
+  this.appendToPreview(tempNote);
+};
+
+noteTracker.updateTags = function(el) {
+  if (currUser.tagLib.indexOf(el) === -1) {
+    currUser.tagLib.push(el);
+  }
+};
+
+
+
+noteTracker.handleDisplay = function() {
+  $('#noteList').on('click', function(e) {
+    noteTracker.getNote(e);
+    console.log($(this));
+  });
+};
+
+noteTracker.getNote = function(e) {
+  var target = this.getTarget(e);
+  var noteID = target.id.slice(7); //slice iD to get array position
+  tempNoteId = parseInt(noteID); // noteID is a string! tempNoteId is an int!
+  this.displayNote(tempNoteId);
+};
+
+noteTracker.displayNote = function(noteID) {
+  this.clearForm();
+  // tempNoteId = noteID;
+  console.log(noteID);
+
+  var htmlToPage = '<div id="noteWrapper" class="borders"><h4 class="labelColor">' + userLibrary[this.currentIndex].library[noteID].noteTitle + '</h4><br/><br/><p class="labelColor">' + userLibrary[this.currentIndex].library[noteID].noteContent + '</p><input class="button-primary navspacing" type="submit" value="Edit note" id="editButton"><input class="button-primary navspacing" type="submit" value="Delete" id="deleteButton"><input class="button-primary navspacing" type="submit" value="New note" id="newNoteButton"></div>';
+  $('#displayWindow').html(htmlToPage);
+
+  $('#editButton').on('click', function(e) {
+    console.log('listener clicked');
+    noteTracker.editNote(e);
+  });
+  $('#deleteButton').on('click', function(e) {
+    noteTracker.deleteNote(e);
+  });
+  $('#newNoteButton').on('click', function(e) {
+    noteTracker.createForm();
+  });
+};
+
+
 
 noteTracker.deleteTag = function(tag) { // deletes specified tag from user's library
   var toBeDeleted = userLibrary[userIndex].tagLibrary.indexOf(tag);
-  userLibrary[userIndex].tagLibrary.splice(toBeDeleted, 1);
+  currUser.tagLib.splice(toBeDeleted, 1);
 };
 
 noteTracker.checkTagExists = function(tag) {
@@ -91,14 +175,7 @@ noteTracker.getTarget = function(e) {
   return e.target || e.srcElement;
 };
 
-noteTracker.getNote = function(e) {
-  var target = this.getTarget(e);
-  var noteID = target.id.slice(7); //slice iD to get array position
-  tempNoteId = parseInt(noteID); // noteID is a string! tempNoteId is an int!
-  this.displayNote(tempNoteId);
-};
-
-noteTracker.sendToBrowser = function(note) {
+noteTracker.appendToPreview = function(note) {
   var $elList = $('<li>');
   $elList.attr('id', 'counter' + note.noteIndex)
 
@@ -114,7 +191,7 @@ noteTracker.sendToBrowser = function(note) {
 
 noteTracker.sendAll = function() {
   for (var i = 0; i < userLibrary[userIndex].library.length; i++) {
-    this.sendToBrowser(userLibrary[userIndex].library[i]);
+    this.appendToPreview(userLibrary[userIndex].library[i]);
   }
 };
 
@@ -233,26 +310,6 @@ noteTracker.editNote = function(e) {
   });
 };
 
-noteTracker.displayNote = function(noteID) {
-  this.clearForm();
-  // tempNoteId = noteID;
-  console.log(noteID);
-
-  var htmlToPage = '<div id="noteWrapper" class="borders"><h4 class="labelColor">' + userLibrary[this.currentIndex].library[noteID].noteTitle + '</h4><br/><br/><p class="labelColor">' + userLibrary[this.currentIndex].library[noteID].noteContent + '</p><input class="button-primary navspacing" type="submit" value="Edit note" id="editButton"><input class="button-primary navspacing" type="submit" value="Delete" id="deleteButton"><input class="button-primary navspacing" type="submit" value="New note" id="newNoteButton"></div>';
-  $('#displayWindow').html(htmlToPage);
-
-  $('#editButton').on('click', function(e) {
-    console.log('listener clicked');
-    noteTracker.editNote(e);
-  });
-  $('#deleteButton').on('click', function(e) {
-    noteTracker.deleteNote(e);
-  });
-  $('#newNoteButton').on('click', function(e) {
-    noteTracker.createForm();
-  });
-};
-
 noteTracker.searchForTag = function(tag) {
   noteTracker.clearNoteBrowser();
   if (tag === "none") {
@@ -264,7 +321,7 @@ noteTracker.searchForTag = function(tag) {
     for (var j = 0; j < userLibrary[userIndex].library[i].noteTags.length; j++) {
       if (userLibrary[userIndex].library[i].noteTags[j] === tag) {
         temp.push(i);
-        noteTracker.sendToBrowser(x);
+        noteTracker.appendToPreview(x);
         break;
       }
     }
