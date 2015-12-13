@@ -16,12 +16,16 @@ h1 {
   background-color: #ffffff;
 }
 
-ul {
+li {
   list-style: none;
+  border-bottom: 1px solid black;
 }
 
-li {
-  border-bottom: 1px solid black;
+#noteList {
+  text-align: center;
+}
+#noteList li {
+  text-align: left;
 }
 
 #noteList li p:first-child {
@@ -58,11 +62,9 @@ input[type="button"].button-primary {
   border-color: #CF3328;
 }
 
-#tagForm {
+#tags-filter {
   color: #C2281E;
-}
-.tagColor {
-  color: #000000;
+  margin-bottom: 0px;
 }
 
 .labelColor {

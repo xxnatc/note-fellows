@@ -4,8 +4,8 @@ h1 {
 nav {
   margin-top: 15px;
 }
-#topSpacing {
-  padding-top: 30px;
+.topSpacing {
+  padding-top: 15px;
 }
 #logo {
   height: 150px;
