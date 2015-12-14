@@ -4,8 +4,8 @@ h1 {
 nav {
   margin-top: 15px;
 }
-#topSpacing {
-  padding-top: 30px;
+.topSpacing {
+  padding-top: 15px;
 }
 #logo {
   height: 150px;
@@ -38,8 +38,11 @@ li {
 #textInput {
   padding-left: 30px;
 }
-#contentTextArea {
+#titleTextArea, #contentTextArea {
   width: 90%;
+}
+#contentTextArea {
+  min-height: 200px;
 }
 .alignButtons {
   margin-left: 50px;
